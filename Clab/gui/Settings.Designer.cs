@@ -1,4 +1,3 @@
-﻿
 namespace Clab
 {
     partial class Settings

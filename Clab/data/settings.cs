@@ -1,4 +1,4 @@
-﻿namespace Clab
+namespace Clab
 {
     public static partial class Generation
     {
