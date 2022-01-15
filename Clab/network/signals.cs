@@ -126,12 +126,12 @@ namespace Clab
                             if (serverIP == address)
                             {
                                 lock (clientLock) lock (filesLock)
-                                    {
-                                        config["isServer"] = null;
-                                        serverIP = null;
-                                        server.Close();
-                                        filesListener.Stop();
-                                    }
+                                {
+                                    config["isServer"] = null;
+                                    serverIP = null;
+                                    server.Close();
+                                    filesListener.Stop();
+                                }
                                 send_signal(Signals.request);
                                 //  if there is no one on the network, PC will become a server 
                                 Task.Delay(5000).ContinueWith(timer => run_server());
