@@ -3,7 +3,11 @@ using System.IO;
 using System.Net;
 using System.Linq;
 using NetFwTypeLib;
+using System.Reflection;
 using System.Net.Sockets;
+using System.Diagnostics;
+using System.Windows.Forms;
+using System.Security.Principal;
 using System.Collections.Generic;
 using System.Net.NetworkInformation;
 
@@ -31,59 +35,98 @@ namespace Clab
 
             INetFwPolicy2 firewallPolicy = (INetFwPolicy2)Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FwPolicy2"));
 
-            INetFwRule firewallRule = firewallPolicy.Rules.OfType<INetFwRule>().Where(x => x.Name == "ClabSignals").FirstOrDefault();
+            INetFwRule firewallRules = firewallPolicy.Rules.OfType<INetFwRule>().Where(x => (x.Name == "ClabSignals") && 
+                                                                                            (x.Name == "ClabMessages") && 
+                                                                                            (x.Name == "ClabFiles")).FirstOrDefault();
 
-            if (firewallRule == null)
+            if (firewallRules == null)
             {
-                INetFwRule2 clabSignals = (INetFwRule2)Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FWRule"));
-                clabSignals.Enabled = true;
-                clabSignals.Action = NET_FW_ACTION_.NET_FW_ACTION_ALLOW;
-                clabSignals.Protocol = 17;
-                clabSignals.LocalPorts = ports["signals"].ToString();
-                clabSignals.Name = "ClabSignals";
-                clabSignals.Profiles = currentProfiles;
-                firewallPolicy.Rules.Add(clabSignals);
-                Logging.handler("warning", "Clab Signals Firewall Rule Added", true);
-            }
+                Common.run_as_admin();
 
-            firewallRule = firewallPolicy.Rules.OfType<INetFwRule>().Where(x => x.Name == "ClabMessages").FirstOrDefault();
+                INetFwRule firewallRule = firewallPolicy.Rules.OfType<INetFwRule>().Where(x => x.Name == "ClabSignals").FirstOrDefault();
 
-            if (firewallRule == null)
-            {
-                INetFwRule2 clabMessages = (INetFwRule2)Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FWRule"));
-                clabMessages.Enabled = true;
-                clabMessages.Action = NET_FW_ACTION_.NET_FW_ACTION_ALLOW;
-                clabMessages.Protocol = 6;
-                clabMessages.LocalPorts = ports["messages"].ToString();
-                clabMessages.Name = "ClabMessages";
-                clabMessages.Profiles = currentProfiles;
-                firewallPolicy.Rules.Add(clabMessages);
-                Logging.handler("warning", "Clab Messages Firewall Rule Added", true);
-            }
+                if (firewallRule == null)
+                {
+                    INetFwRule2 clabSignals = (INetFwRule2)Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FWRule"));
+                    clabSignals.Enabled = true;
+                    clabSignals.Action = NET_FW_ACTION_.NET_FW_ACTION_ALLOW;
+                    clabSignals.Protocol = 17;
+                    clabSignals.LocalPorts = ports["signals"].ToString();
+                    clabSignals.Name = "ClabSignals";
+                    clabSignals.Profiles = currentProfiles;
+                    firewallPolicy.Rules.Add(clabSignals);
+                    Logging.handler("warning", "Clab Signals Firewall Rule Added", true);
+                }
 
-            firewallRule = firewallPolicy.Rules.OfType<INetFwRule>().Where(x => x.Name == "ClabFiles").FirstOrDefault();
+                firewallRule = firewallPolicy.Rules.OfType<INetFwRule>().Where(x => x.Name == "ClabMessages").FirstOrDefault();
 
-            if (firewallRule == null)
-            {
-                INetFwRule2 clabFiles = (INetFwRule2)Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FWRule"));
-                clabFiles.Enabled = true;
-                clabFiles.Action = NET_FW_ACTION_.NET_FW_ACTION_ALLOW;
-                clabFiles.Protocol = 6;
-                clabFiles.LocalPorts = ports["files"].ToString();
-                clabFiles.Name = "ClabFiles";
-                clabFiles.Profiles = currentProfiles;
-                firewallPolicy.Rules.Add(clabFiles);
-                Logging.handler("warning", "Clab Files Firewall Rule Added", true);
+                if (firewallRule == null)
+                {
+                    INetFwRule2 clabMessages = (INetFwRule2)Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FWRule"));
+                    clabMessages.Enabled = true;
+                    clabMessages.Action = NET_FW_ACTION_.NET_FW_ACTION_ALLOW;
+                    clabMessages.Protocol = 6;
+                    clabMessages.LocalPorts = ports["messages"].ToString();
+                    clabMessages.Name = "ClabMessages";
+                    clabMessages.Profiles = currentProfiles;
+                    firewallPolicy.Rules.Add(clabMessages);
+                    Logging.handler("warning", "Clab Messages Firewall Rule Added", true);
+                }
+
+                firewallRule = firewallPolicy.Rules.OfType<INetFwRule>().Where(x => x.Name == "ClabFiles").FirstOrDefault();
+
+                if (firewallRule == null)
+                {
+                    INetFwRule2 clabFiles = (INetFwRule2)Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FWRule"));
+                    clabFiles.Enabled = true;
+                    clabFiles.Action = NET_FW_ACTION_.NET_FW_ACTION_ALLOW;
+                    clabFiles.Protocol = 6;
+                    clabFiles.LocalPorts = ports["files"].ToString();
+                    clabFiles.Name = "ClabFiles";
+                    clabFiles.Profiles = currentProfiles;
+                    firewallPolicy.Rules.Add(clabFiles);
+                    Logging.handler("warning", "Clab Files Firewall Rule Added", true);
+                }
             }
         }
     }
 
     public static partial class Common
     {
+        public static bool is_admin()
+        {
+            WindowsIdentity id = WindowsIdentity.GetCurrent();
+            WindowsPrincipal principal = new WindowsPrincipal(id);
+
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
+
+        public static void run_as_admin()
+        {
+            if (!is_admin())
+            {
+                ProcessStartInfo proc = new ProcessStartInfo();
+                proc.UseShellExecute = false;
+                proc.WorkingDirectory = Environment.CurrentDirectory;
+                proc.FileName = Assembly.GetEntryAssembly().CodeBase;
+                proc.Verb = "runas";
+
+                try
+                {
+                    Process.Start(proc);
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("Please run Clab as administrator this time. This is required to configure the firewall");
+                }
+
+                Application.Exit();
+            }
+        }
+
         /// <summary>Returns only physical local IP</summary>
         public static string get_local_ip()
         {
-
             foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
             {
                 var addr = ni.GetIPProperties().GatewayAddresses.FirstOrDefault();
