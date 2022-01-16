@@ -126,7 +126,11 @@ namespace Clab
                 }
                 catch (Exception)
                 {
-                    MessageBox.Show("Please run Clab as administrator next time. This is required to configure the firewall");
+                    MessageBox.Show(new Form { TopMost = true }, 
+                                    "Please run Clab as administrator next time. This is required to configure the firewall",
+                                    "Firewall Configuration [Access Denied]",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Exclamation);
                 }
 
                 Environment.Exit(0);

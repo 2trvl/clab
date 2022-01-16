@@ -6,6 +6,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Version>0.0.1</Version>
     <ApplicationIcon>icon\uninstall.ico</ApplicationIcon>
+    <AssemblyName>uninstall</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,6 +19,12 @@
       <Isolated>false</Isolated>
       <EmbedInteropTypes>true</EmbedInteropTypes>
     </COMReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="uninstall.cmd">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
