@@ -33,16 +33,13 @@ namespace Clab
         static List<TcpClient> files;
         static readonly object filesLock = new object();
 
-        static Network()
+        public static void run()
         {
             signals = new UdpClient();
             signals.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             signals.Client.Bind(new IPEndPoint(IPAddress.Any, ports["signals"]));
             signals.JoinMulticastGroup(signalsIP, IPAddress.Parse(Network.IP));
-        }
 
-        public static void run()
-        {
             //  if the network is silent for 5 seconds, the PC becomes a server
             Task.Delay(5000).ContinueWith(timer => run_server());
 

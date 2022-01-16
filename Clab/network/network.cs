@@ -35,11 +35,11 @@ namespace Clab
 
             INetFwPolicy2 firewallPolicy = (INetFwPolicy2)Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FwPolicy2"));
 
-            INetFwRule firewallRules = firewallPolicy.Rules.OfType<INetFwRule>().Where(x => (x.Name == "ClabSignals") && 
-                                                                                            (x.Name == "ClabMessages") && 
-                                                                                            (x.Name == "ClabFiles")).FirstOrDefault();
+            bool firewallRules = firewallPolicy.Rules.OfType<INetFwRule>().Where(x => (x.Name == "ClabSignals") || 
+                                                                                      (x.Name == "ClabMessages") || 
+                                                                                      (x.Name == "ClabFiles")).Count() == 3;
 
-            if (firewallRules == null)
+            if (!firewallRules)
             {
                 Common.run_as_admin();
 
@@ -95,32 +95,41 @@ namespace Clab
     {
         public static bool is_admin()
         {
-            WindowsIdentity id = WindowsIdentity.GetCurrent();
-            WindowsPrincipal principal = new WindowsPrincipal(id);
+            bool admin;
 
-            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            try
+            {
+                WindowsIdentity id = WindowsIdentity.GetCurrent();
+                WindowsPrincipal principal = new WindowsPrincipal(id);
+                admin = principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+            catch (Exception)
+            {
+                admin = false;
+            }
+
+            return admin;
         }
 
         public static void run_as_admin()
         {
             if (!is_admin())
             {
-                ProcessStartInfo proc = new ProcessStartInfo();
-                proc.UseShellExecute = false;
-                proc.WorkingDirectory = Environment.CurrentDirectory;
-                proc.FileName = Assembly.GetEntryAssembly().CodeBase;
-                proc.Verb = "runas";
+                Process proc = new Process();
+                proc.StartInfo.Verb = "runas";
+                proc.StartInfo.UseShellExecute = true;
+                proc.StartInfo.FileName = Path.ChangeExtension(Assembly.GetEntryAssembly().Location, ".exe");
 
                 try
                 {
-                    Process.Start(proc);
+                    proc.Start();
                 }
                 catch (Exception)
                 {
-                    MessageBox.Show("Please run Clab as administrator this time. This is required to configure the firewall");
+                    MessageBox.Show("Please run Clab as administrator next time. This is required to configure the firewall");
                 }
 
-                Application.Exit();
+                Environment.Exit(0);
             }
         }
 
